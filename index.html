@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link href="http://fonts.googleapis.com/css?family=Bitter" rel="stylesheet" type="text/css">
+    <link href="assets/main.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <h1>Entropy</h1>
+
+    <blockquote>
+        <p>Entropy is a programming language about giving up control. All data decays as the program runs: each value alters slightly every time it's used, becoming less precise. An Entropy programmer needs to abandon the pursuit of precision which most programming demands—often working against years of habit—in order to program effectively. Any output from an Entropy program will be approximate, and the more the data is accessed, the more random it will become. The programmer has, at best, a short window to get his/her idea across before the program corrodes.</p>
+        <cite>From the <a href="http://esolangs.org/" target="_blank">Esolang</a> wiki entry for <a href="http://esolangs.org/wiki/Entropy" target="_blank">Entropy</a>.</cite>
+    </blockquote>
+
+    <p>Take for example a simple 99 bottles of beer on the wall program:</p>
+
+    <div id="slider">
+        <div id="thumb">
+            <div id="label"></div>
+        </div>
+    </div>
+    <div id="line"></div>
+
+    <p>At each step you can see the letters and bottle count decay more and more until about half-way through it is completely unreadable. You'll also notice that rarely there will be exactly 99 verses. Even though at every verse we subtract 1 bottle the total count is fluctuating; sometimes increasing, other times decreasing.</p>
+
+    <script type="text/javascript" src="entropy.js"></script>
+    <script type="text/javascript" src="demos.js"></script>
+</body>
+</html>
