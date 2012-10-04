@@ -12,9 +12,7 @@
         }
     };
 
-    var header = new Header();
-
-    Entropy.entropify(header);
+    var header = Entropy.entropify(new Header());
 
     setInterval(function(){
         header.update();
@@ -65,7 +63,6 @@
         outputs.push(output);
     }
 
-
     var slider = document.querySelector('#slider');
     var thumb = document.querySelector('#thumb');
     var label = document.querySelector('#label');
@@ -86,26 +83,210 @@
         percentage = Math.max(0, Math.min(100, percentage));
         thumb.style.left = percentage + '%';
 
-        updateText(Math.floor((outputs.length - 1) * (percentage / 100)));
-    };
-
-    var mouseDown = function(e){
-        updateSider(e);
-        document.addEventListener('mouseup', mouseUp);
-        document.addEventListener('mousemove', mouseMove);
-    };
-
-    var mouseMove = function(e){
-        updateSider(e);
+        var index = Math.floor((outputs.length - 1) * (percentage / 100));
+        updateText(index);
     };
 
     var mouseUp = function(e){
         updateSider(e);
         document.removeEventListener('mouseup', mouseUp);
-        document.removeEventListener('mousemove', mouseMove);
+        document.removeEventListener('mousemove', updateSider);
     };
 
-    updateText(0);
+    thumb.addEventListener('mousedown', function(e){
+        updateSider(e);
+        document.addEventListener('mouseup', mouseUp);
+        document.addEventListener('mousemove', updateSider);
+    });
 
-    thumb.addEventListener('mousedown', mouseDown);
+    updateText(0);
+})();
+
+// Decaying images.
+(function(){
+
+    var PIXEL_SIZE = 10;
+
+    var canvas = document.querySelector('#demo-image');
+    var context = canvas.getContext('2d');
+    var data, updateTimer;
+
+    var clamp = function(value, min, max){
+        return Math.max(Math.min(value, max), min);
+    };
+
+    var getColor = function(row, column, color){
+        var value = clamp(data[row][column][color], 0, 255);
+        data[row][column][color] = value;
+        return Math.round(value);
+    };
+
+    var updateCanvas = function(e){
+        var i, j, row;
+        var x, y, color;
+
+        for(j = 0, y = 0; j < data.length; j++, y += PIXEL_SIZE){
+            row = data[j];
+            for(i = 0, x = 0; i < row.length; i++, x += PIXEL_SIZE){
+                color = 'rgba(' + [
+                    getColor(j, i, 'r'),
+                    getColor(j, i, 'g'),
+                    getColor(j, i, 'b'),
+                    clamp(data[j][i].a, 0, 1)
+                ].join(',') + ')';
+                context.fillStyle = color;
+                context.fillRect(x, y, PIXEL_SIZE, PIXEL_SIZE);
+            }
+        }
+    };
+
+    var loadImageData = function(){
+        var img = new Image();
+
+        img.onload = function(){
+            canvas.setAttribute('width', img.width * PIXEL_SIZE);
+            canvas.setAttribute('height', img.height * PIXEL_SIZE);
+
+            var context = canvas.getContext('2d');
+            context.drawImage(img, 0, 0);
+
+            var imageData = context.getImageData(0, 0, img.width, img.height);
+            var i, j, row;
+
+            data = [];
+            for (j = 0; j < img.height; j++){
+                row = [];
+                for (i = 0; i < img.width; i ++){
+                    row.push(Entropy.entropify({
+                        r: imageData.data[(j * img.width * 4) + (i * 4)],
+                        g: imageData.data[(j * img.width * 4) + (i * 4) + 1],
+                        b: imageData.data[(j * img.width * 4) + (i * 4) + 2],
+                        a: 1
+                    }));
+                }
+                data.push(row);
+            }
+
+            updateCanvas();
+
+            clearInterval(updateTimer);
+            updateTimer = setInterval(updateCanvas, 500);
+        };
+
+        img.src = 'assets/demo_image.png';
+    };
+
+    loadImageData();
+
+    canvas.addEventListener('mousemove', updateCanvas);
+
+    var resetButton = document.querySelector('.image-wrapper span');
+    resetButton.addEventListener('click', loadImageData);
+})();
+
+
+(function(){
+
+    var canvas = document.querySelector('#demo-game');
+    var context = canvas.getContext('2d');
+    var points = [];
+
+    var DAMPENING = 5;
+
+    canvas.setAttribute('width', 700);
+    canvas.setAttribute('height', 375);
+
+    context.fillStyle = 'black';
+    context.strokeStyle = 'red';
+    context.lineWidth = 1;
+
+    var updateCanvas = function(e){
+        var canvasRect = canvas.getBoundingClientRect();
+        var ratio = canvas.width / canvasRect.width;
+
+        var x = (e.clientX - canvasRect.left) * ratio;
+        var y = (e.clientY - canvasRect.top) * ratio;
+
+        if (points.length > 750) points.shift();
+
+        points.push(Entropy.entropify({
+            x: x * DAMPENING,
+            y: y * DAMPENING
+        }));
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        context.beginPath();
+        context.moveTo(points[0].x / DAMPENING, points[0].y / DAMPENING);
+        points.forEach(function(point, index){
+            if (!index) return;
+            context.lineTo(point.x / DAMPENING, point.y / DAMPENING);
+        });
+        context.stroke();
+        context.fillStyle = 'rgba(255,0,0,0.05)';
+        context.fill();
+
+        Dots.draw();
+    };
+
+    var mouseDown = function(e){
+        updateCanvas(e);
+
+        document.addEventListener('mouseup', mouseUp);
+        document.addEventListener('mousemove', updateCanvas);
+    };
+
+    var mouseUp = function(e){
+        updateCanvas(e);
+        document.removeEventListener('mouseup', mouseUp);
+        document.removeEventListener('mousemove', updateCanvas);
+    };
+
+    canvas.addEventListener('mousedown', mouseDown);
+
+    var Dots = {
+
+        RADIUS: 3,
+
+        POINT_DAMPENING: 10,
+
+        INDEX_DAMPENING: 100,
+
+        originalData: '[{"x":260,"y":287},{"x":268,"y":260},{"x":187,"y":196},{"x":206,"y":188},{"x":191,"y":136},{"x":237,"y":143},{"x":252,"y":120},{"x":303,"y":164},{"x":284,"y":66},{"x":319,"y":83},{"x":350,"y":27},{"x":381,"y":81},{"x":416,"y":67},{"x":398,"y":163},{"x":451,"y":117},{"x":461,"y":141},{"x":511,"y":135},{"x":495,"y":186},{"x":515,"y":194},{"x":433,"y":258},{"x":439,"y":288},{"x":356,"y":278},{"x":358,"y":355},{"x":344,"y":355},{"x":344,"y":277},{"x":261,"y":288}]',
+
+        init: function(){
+            this.data = JSON.parse(this.originalData);
+
+            this.data = this.data.map(function(dot, index){
+                return Entropy.entropify({
+                    x: dot.x * this.POINT_DAMPENING,
+                    y: dot.y * this.POINT_DAMPENING,
+                    index: index * this.INDEX_DAMPENING
+                });
+            }, this);
+
+            this.draw();
+        },
+
+        draw: function(){
+            context.fillStyle = 'black';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+
+            this.data.forEach(function(dot){
+                context.beginPath();
+                context.moveTo(dot.x / this.POINT_DAMPENING, dot.y / this.POINT_DAMPENING);
+                context.arc(dot.x / this.POINT_DAMPENING, dot.y / this.POINT_DAMPENING,
+                    this.RADIUS, 0, Math.PI * 2);
+                context.fill();
+
+                var index = Math.round(((dot.index / this.INDEX_DAMPENING) * 100)) / 100;
+
+                context.fillText(index, (dot.x / this.POINT_DAMPENING),
+                    (dot.y / this.POINT_DAMPENING) - 10);
+            }, this);
+        }
+    };
+
+    Dots.init();
 })();

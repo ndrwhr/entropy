@@ -24,9 +24,19 @@ h1 {
     margin-bottom: 50px;
 }
 
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 70px 0 50px;
+}
+
 p, blockquote {
-    margin-bottom: 50px;
+    margin-bottom: 20px;
     line-height: 1.7em;
+}
+
+blockquote {
+    margin-bottom: 50px;
 }
 
 blockquote p {
@@ -41,6 +51,7 @@ blockquote p::before {
     left: -65px;
     top: 50px;
     font-size: 130px;
+    color: #777
 }
 
 blockquote cite {
@@ -56,6 +67,7 @@ blockquote cite {
     whitespace: pre-wrap;
     word-wrap: break-word;
     margin-bottom: 25px;
+    min-height: 200px;
 }
 
 #slider {
@@ -94,4 +106,42 @@ blockquote cite {
     font-size: 10px;
     font-family: "Helvetica";
     color: #aaa;
+}
+
+#demo-image {
+    display: block;
+    margin: 30px auto;
+    width: 100%;
+}
+
+.image-wrapper {
+    position: relative;
+}
+
+.image-wrapper span {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: white;
+    width: 30px;
+    height: 30px;
+    line-height: 32px;
+    text-align: center;
+    border-radius: 100%;
+    font-size: 20px;
+    font-weight: bold;
+    border: 2px solid black;
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+.image-wrapper span:hover {
+    opacity: 0.9;
+}
+
+#demo-game {
+    background: white;
+    width: 100%;
+    border: 1px solid #ddd;
+    cursor: crosshair;
 }
