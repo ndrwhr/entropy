@@ -110,15 +110,14 @@ blockquote cite {
 
 #demo-image {
     display: block;
-    margin: 30px auto;
     width: 100%;
 }
 
-.image-wrapper {
+.canvas-wrapper {
     position: relative;
 }
 
-.image-wrapper span {
+.canvas-wrapper span {
     position: absolute;
     bottom: 10px;
     right: 10px;
@@ -135,11 +134,12 @@ blockquote cite {
     cursor: pointer;
 }
 
-.image-wrapper span:hover {
+.canvas-wrapper span:hover {
     opacity: 0.9;
 }
 
 #demo-game {
+    display: block;
     background: white;
     width: 100%;
     border: 1px solid #ddd;

@@ -180,113 +180,130 @@
 
     canvas.addEventListener('mousemove', updateCanvas);
 
-    var resetButton = document.querySelector('.image-wrapper span');
+    var resetButton = document.querySelector('#demo-image + span');
     resetButton.addEventListener('click', loadImageData);
 })();
 
 
 (function(){
+    var MAX_POINTS = 1500;
+    var WIDTH = 750;
+    var HEIGHT = 375;
+
+    var DOT_RADIUS = 3;
+    var DOT_DAMPENING = 10;
+    var DOT_INDEX_DAMPENING = 100;
+    var LINE_DAMPENING = 5;
 
     var canvas = document.querySelector('#demo-game');
     var context = canvas.getContext('2d');
+
+    canvas.setAttribute('width', WIDTH);
+    canvas.setAttribute('height', HEIGHT);
+
+    var dotData = '[{"x":260,"y":287},{"x":268,"y":260},{"x":187,"y":196},{"x":206,"y":188},{"x":191,"y":136},{"x":237,"y":143},{"x":252,"y":120},{"x":303,"y":164},{"x":284,"y":66},{"x":319,"y":83},{"x":350,"y":27},{"x":381,"y":81},{"x":416,"y":67},{"x":398,"y":163},{"x":451,"y":117},{"x":461,"y":141},{"x":511,"y":135},{"x":495,"y":186},{"x":515,"y":194},{"x":433,"y":258},{"x":439,"y":288},{"x":356,"y":278},{"x":358,"y":355},{"x":344,"y":355},{"x":344,"y":277},{"x":261,"y":288}]';
+    var dots = [];
     var points = [];
+    var decayTimer;
 
-    var DAMPENING = 5;
+    var initializeData = function(){
+        dots = JSON.parse(dotData).map(function(dot, index){
+            return Entropy.entropify({
+                x: dot.x * DOT_DAMPENING,
+                y: dot.y * DOT_DAMPENING,
+                index: index * DOT_INDEX_DAMPENING
+            });
+        });
+    };
 
-    canvas.setAttribute('width', 700);
-    canvas.setAttribute('height', 375);
+    var drawPoints = function(e){
+        context.strokeStyle = 'red';
+        context.lineWidth = 1;
 
-    context.fillStyle = 'black';
-    context.strokeStyle = 'red';
-    context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(points[0].x / LINE_DAMPENING, points[0].y / LINE_DAMPENING);
+        points.forEach(function(point, index){
+            if (!index) return;
+            context.lineTo(point.x / LINE_DAMPENING, point.y / LINE_DAMPENING);
+        });
+        context.stroke();
+        context.fillStyle = 'rgba(255,0,0,0.05)';
+        context.fill();
+    };
 
-    var updateCanvas = function(e){
+    var drawDots = function(){
+        context.font = '12px Arial';
+        context.fillStyle = 'black';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+
+        dots.forEach(function(dot){
+            context.beginPath();
+            context.moveTo(dot.x / DOT_DAMPENING, dot.y / DOT_DAMPENING);
+            context.arc(dot.x / DOT_DAMPENING, dot.y / DOT_DAMPENING,
+                DOT_RADIUS, 0, Math.PI * 2);
+            context.fill();
+
+            var index = Math.round(((dot.index / DOT_INDEX_DAMPENING) * 100)) / 100;
+
+            context.fillText(index, (dot.x / DOT_DAMPENING),
+                (dot.y / DOT_DAMPENING) - 10);
+        }, this);
+    };
+
+    var draw = function(){
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if (points.length) drawPoints();
+        drawDots();
+    };
+
+    var startDecay = function(){
+        if (!decayTimer) decayTimer = setInterval(draw, 200);
+    };
+
+    var mouseMove = function(e){
         var canvasRect = canvas.getBoundingClientRect();
         var ratio = canvas.width / canvasRect.width;
 
         var x = (e.clientX - canvasRect.left) * ratio;
         var y = (e.clientY - canvasRect.top) * ratio;
 
-        if (points.length > 750) points.shift();
+        if (points.length > MAX_POINTS) points.shift();
 
         points.push(Entropy.entropify({
-            x: x * DAMPENING,
-            y: y * DAMPENING
+            x: x * LINE_DAMPENING,
+            y: y * LINE_DAMPENING
         }));
 
-        context.clearRect(0, 0, canvas.width, canvas.height);
-
-        context.beginPath();
-        context.moveTo(points[0].x / DAMPENING, points[0].y / DAMPENING);
-        points.forEach(function(point, index){
-            if (!index) return;
-            context.lineTo(point.x / DAMPENING, point.y / DAMPENING);
-        });
-        context.stroke();
-        context.fillStyle = 'rgba(255,0,0,0.05)';
-        context.fill();
-
-        Dots.draw();
+        draw();
     };
 
     var mouseDown = function(e){
-        updateCanvas(e);
-
+        startDecay();
         document.addEventListener('mouseup', mouseUp);
-        document.addEventListener('mousemove', updateCanvas);
+        document.addEventListener('mousemove', mouseMove);
     };
 
     var mouseUp = function(e){
-        updateCanvas(e);
         document.removeEventListener('mouseup', mouseUp);
-        document.removeEventListener('mousemove', updateCanvas);
+        document.removeEventListener('mousemove', mouseMove);
     };
 
     canvas.addEventListener('mousedown', mouseDown);
 
-    var Dots = {
+    var resetButton = document.querySelector('#demo-game + span');
+    resetButton.addEventListener('click', function(evt){
+        evt.preventDefault();
+        evt.stopPropagation();
 
-        RADIUS: 3,
+        decayTimer = clearInterval(decayTimer);
 
-        POINT_DAMPENING: 10,
+        points = [];
 
-        INDEX_DAMPENING: 100,
+        initializeData();
+        draw();
+    });
 
-        originalData: '[{"x":260,"y":287},{"x":268,"y":260},{"x":187,"y":196},{"x":206,"y":188},{"x":191,"y":136},{"x":237,"y":143},{"x":252,"y":120},{"x":303,"y":164},{"x":284,"y":66},{"x":319,"y":83},{"x":350,"y":27},{"x":381,"y":81},{"x":416,"y":67},{"x":398,"y":163},{"x":451,"y":117},{"x":461,"y":141},{"x":511,"y":135},{"x":495,"y":186},{"x":515,"y":194},{"x":433,"y":258},{"x":439,"y":288},{"x":356,"y":278},{"x":358,"y":355},{"x":344,"y":355},{"x":344,"y":277},{"x":261,"y":288}]',
-
-        init: function(){
-            this.data = JSON.parse(this.originalData);
-
-            this.data = this.data.map(function(dot, index){
-                return Entropy.entropify({
-                    x: dot.x * this.POINT_DAMPENING,
-                    y: dot.y * this.POINT_DAMPENING,
-                    index: index * this.INDEX_DAMPENING
-                });
-            }, this);
-
-            this.draw();
-        },
-
-        draw: function(){
-            context.fillStyle = 'black';
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-
-            this.data.forEach(function(dot){
-                context.beginPath();
-                context.moveTo(dot.x / this.POINT_DAMPENING, dot.y / this.POINT_DAMPENING);
-                context.arc(dot.x / this.POINT_DAMPENING, dot.y / this.POINT_DAMPENING,
-                    this.RADIUS, 0, Math.PI * 2);
-                context.fill();
-
-                var index = Math.round(((dot.index / this.INDEX_DAMPENING) * 100)) / 100;
-
-                context.fillText(index, (dot.x / this.POINT_DAMPENING),
-                    (dot.y / this.POINT_DAMPENING) - 10);
-            }, this);
-        }
-    };
-
-    Dots.init();
+    initializeData();
+    draw();
 })();
