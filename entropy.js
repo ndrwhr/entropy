@@ -29,7 +29,7 @@ var Entropy = {
      *
      * @return {dest}           The Destination object with all source copied over.
      */
-    entropify: function(dest, source){
+    watch: function(dest, source){
         if (!source) source = dest;
         for (var prop in source){
             var value = source[prop];

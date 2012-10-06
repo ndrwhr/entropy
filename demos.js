@@ -12,7 +12,7 @@
         }
     };
 
-    var header = Entropy.entropify(new Header());
+    var header = Entropy.watch(new Header());
 
     setInterval(function(){
         header.update();
@@ -21,7 +21,7 @@
 
 // 99 Bottles of beer on the wall.
 (function(){
-    var NinetyNineBottles = Entropy.entropify({
+    var NinetyNineBottles = Entropy.watch({
         count: 99,
 
         decrement: 1,
@@ -157,7 +157,7 @@
             for (j = 0; j < img.height; j++){
                 row = [];
                 for (i = 0; i < img.width; i ++){
-                    row.push(Entropy.entropify({
+                    row.push(Entropy.watch({
                         r: imageData.data[(j * img.width * 4) + (i * 4)],
                         g: imageData.data[(j * img.width * 4) + (i * 4) + 1],
                         b: imageData.data[(j * img.width * 4) + (i * 4) + 2],
@@ -208,7 +208,7 @@
 
     var initializeData = function(){
         dots = JSON.parse(dotData).map(function(dot, index){
-            return Entropy.entropify({
+            return Entropy.watch({
                 x: dot.x * DOT_DAMPENING,
                 y: dot.y * DOT_DAMPENING,
                 index: index * DOT_INDEX_DAMPENING
@@ -270,7 +270,7 @@
 
         if (points.length > MAX_POINTS) points.shift();
 
-        points.push(Entropy.entropify({
+        points.push(Entropy.watch({
             x: x * LINE_DAMPENING,
             y: y * LINE_DAMPENING
         }));
