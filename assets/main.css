@@ -24,10 +24,22 @@ h1 {
     margin-bottom: 50px;
 }
 
+h3 {
+    margin-bottom: 20px;
+}
+
 hr {
     border: none;
     border-top: 1px solid #ddd;
     margin: 70px 0 50px;
+}
+
+ul {
+    margin: 15px 0 20px;
+}
+
+ul li {
+    margin: 0 0 5px 35px;
 }
 
 p, blockquote {
@@ -62,7 +74,32 @@ blockquote cite {
     color: #888;
 }
 
-#line {
+.warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    text-align: center;
+    background: rgba(255, 200, 200, 0.85);
+    padding: 10px;
+    border-bottom: 1px solid red;
+    z-index: 100;
+}
+
+.warning span {
+    font-size: 70%;
+}
+
+.show-warning {
+    margin-top: 60px;
+}
+
+.show-warning .warning {
+    display: block;
+}
+
+#verse {
     font-size: 34px;
     whitespace: pre-wrap;
     word-wrap: break-word;
@@ -130,8 +167,13 @@ blockquote cite {
     font-size: 20px;
     font-weight: bold;
     border: 2px solid black;
-    opacity: 0.6;
+    opacity: 0.4;
     cursor: pointer;
+    -webkit-transition: opacity 100ms ease-in;
+    -moz-transition: opacity 100ms ease-in;
+    -ie-transition: opacity 100ms ease-in;
+    -o-transition: opacity 100ms ease-in;
+    transition: opacity 100ms ease-in;
 }
 
 .canvas-wrapper span:hover {
@@ -144,4 +186,18 @@ blockquote cite {
     width: 100%;
     border: 1px solid #ddd;
     cursor: crosshair;
+}
+
+pre {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+    padding: 10px 20px;
+    font-size: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.social-links {
+    text-align: center;
+    margin: 50px 0;
 }

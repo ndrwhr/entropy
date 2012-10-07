@@ -1,6 +1,14 @@
 
+var SUPPORTS_ENTROPY = !!Object.defineProperty;
+
+if (!SUPPORTS_ENTROPY){
+    document.body.className = 'show-warning';
+}
+
 // Decaying header.
 (function(){
+    if (!SUPPORTS_ENTROPY) return;
+
     var Header = function(){
         this.el = document.querySelector('h1');
         this.text = this.el.innerHTML;
@@ -21,6 +29,8 @@
 
 // 99 Bottles of beer on the wall.
 (function(){
+    if (!SUPPORTS_ENTROPY) return;
+
     var NinetyNineBottles = Entropy.watch({
         count: 99,
 
@@ -55,21 +65,20 @@
         }
     });
 
-    var div = document.querySelector('#line');
-
-    var outputs = [];
-    var output;
-    while ((output = NinetyNineBottles.step())){
-        outputs.push(output);
+    var verses = [];
+    var verse;
+    while ((verse = NinetyNineBottles.step())){
+        verses.push(verse);
     }
 
+    var ouptput = document.querySelector('#verse');
     var slider = document.querySelector('#slider');
     var thumb = document.querySelector('#thumb');
     var label = document.querySelector('#label');
 
     var updateText = function(index){
-        div.innerHTML = '';
-        div.appendChild(document.createTextNode(outputs[index]));
+        ouptput.innerHTML = '';
+        ouptput.appendChild(document.createTextNode(verses[index]));
         label.innerHTML = 'Verse ' + (index + 1);
     };
 
@@ -83,7 +92,7 @@
         percentage = Math.max(0, Math.min(100, percentage));
         thumb.style.left = percentage + '%';
 
-        var index = Math.floor((outputs.length - 1) * (percentage / 100));
+        var index = Math.floor((verses.length - 1) * (percentage / 100));
         updateText(index);
     };
 
@@ -104,6 +113,7 @@
 
 // Decaying images.
 (function(){
+    if (!SUPPORTS_ENTROPY) return;
 
     var PIXEL_SIZE = 10;
 
@@ -184,8 +194,10 @@
     resetButton.addEventListener('click', loadImageData);
 })();
 
-
+// Connect the dots.
 (function(){
+    if (!SUPPORTS_ENTROPY) return;
+
     var MAX_POINTS = 1500;
     var WIDTH = 750;
     var HEIGHT = 375;
@@ -262,6 +274,9 @@
     };
 
     var mouseMove = function(e){
+        e.preventDefault();
+        e.stopPropagation();
+
         var canvasRect = canvas.getBoundingClientRect();
         var ratio = canvas.width / canvasRect.width;
 

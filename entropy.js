@@ -24,24 +24,20 @@ var Entropy = {
      *
      * If the second parameter is omitted then the first parameter will just be copied onto itself.
      *
-     * @param  {Object} dest    The object into which source should be copied.
-     * @param  {Object} source  The object that should be monitored and copied into dest.
+     * @param  {Object} obj     The object with values that should be monitored.
      *
-     * @return {dest}           The Destination object with all source copied over.
+     * @return {Object}         The passed in object with all its values monitored.
      */
-    watch: function(dest, source){
-        if (!source) source = dest;
-        for (var prop in source){
-            var value = source[prop];
+    watch: function(obj){
+        for (var prop in obj){
+            var value = obj[prop];
 
             if (this.isString_(value) || this.isNumber_(value)){
-                this.defineProperty_(dest, prop, value);
-            } else {
-                dest[prop] = source[prop];
+                this.defineProperty_(obj, prop, value);
             }
         }
 
-        return dest;
+        return obj;
     },
 
     /**
