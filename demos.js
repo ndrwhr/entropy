@@ -9,22 +9,19 @@ if (!SUPPORTS_ENTROPY){
 (function(){
     if (!SUPPORTS_ENTROPY) return;
 
-    var Header = function(){
-        this.el = document.querySelector('h1');
-        this.text = this.el.innerHTML;
-    };
-    Header.prototype = {
-        update: function(){
-            this.el.innerHTML = '';
-            this.el.appendChild(document.createTextNode(this.text));
-        }
+    var header = document.querySelector('h1');
+    var data = Entropy.watch({
+        text: header.innerHTML
+    }, 2);
+
+    var updateHeader = function(){
+        header.innerHTML = '';
+        header.appendChild(document.createTextNode(data.text));
+
+        setTimeout(updateHeader, 2000 * Math.random() + 1000);
     };
 
-    var header = Entropy.watch(new Header());
-
-    setInterval(function(){
-        header.update();
-    }, 1500);
+    setTimeout(updateHeader, 5000);
 })();
 
 // 99 Bottles of beer on the wall.
@@ -63,7 +60,7 @@ if (!SUPPORTS_ENTROPY){
         getCount_: function(){
             return this.count.toFixed(Math.max(Math.min(this.precision, 20), 0));
         }
-    });
+    }, 0.9);
 
     var verses = [];
     var verse;
@@ -115,37 +112,38 @@ if (!SUPPORTS_ENTROPY){
 (function(){
     if (!SUPPORTS_ENTROPY) return;
 
-    var PIXEL_SIZE = 10;
+    var PIXEL_SIZE = 2;
 
     var canvas = document.querySelector('#demo-image');
     var context = canvas.getContext('2d');
-    var data, updateTimer;
+    var vertexData, colorData, updateTimer;
 
     var clamp = function(value, min, max){
         return Math.max(Math.min(value, max), min);
     };
 
-    var getColor = function(row, column, color){
-        var value = clamp(data[row][column][color], 0, 255);
-        data[row][column][color] = value;
-        return Math.round(value);
+    var getColor = function(row, column){
+        var rgb = ['r', 'g', 'b'].map(function(color){
+            var value = clamp(colorData[row][column][color], 0, 255);
+            colorData[row][column][color] = value;
+            return Math.round(value);
+        }).join(',');
+
+        return 'rgba(' + rgb + ', 1)';
     };
 
     var updateCanvas = function(e){
-        var i, j, row;
-        var x, y, color;
+        var i, j;
 
-        for(j = 0, y = 0; j < data.length; j++, y += PIXEL_SIZE){
-            row = data[j];
-            for(i = 0, x = 0; i < row.length; i++, x += PIXEL_SIZE){
-                color = 'rgba(' + [
-                    getColor(j, i, 'r'),
-                    getColor(j, i, 'g'),
-                    getColor(j, i, 'b'),
-                    clamp(data[j][i].a, 0, 1)
-                ].join(',') + ')';
-                context.fillStyle = color;
-                context.fillRect(x, y, PIXEL_SIZE, PIXEL_SIZE);
+        for(j = 0; j < colorData.length; j++){
+            for(i = 0; i < colorData[j].length; i++){
+                context.beginPath();
+                context.fillStyle = getColor(j, i);
+                context.moveTo(vertexData[j][i].x, vertexData[j][i].y);
+                context.lineTo(vertexData[j][i + 1].x, vertexData[j][i + 1].y);
+                context.lineTo(vertexData[j + 1][i + 1].x, vertexData[j + 1][i + 1].y);
+                context.lineTo(vertexData[j + 1][i].x, vertexData[j + 1][i].y);
+                context.fill();
             }
         }
     };
@@ -154,6 +152,13 @@ if (!SUPPORTS_ENTROPY){
         var img = new Image();
 
         img.onload = function(){
+            var createVertex = function(x, y){
+                return Entropy.watch({
+                    x: x,
+                    y: y
+                }, 0.5);
+            };
+
             canvas.setAttribute('width', img.width * PIXEL_SIZE);
             canvas.setAttribute('height', img.height * PIXEL_SIZE);
 
@@ -161,26 +166,43 @@ if (!SUPPORTS_ENTROPY){
             context.drawImage(img, 0, 0);
 
             var imageData = context.getImageData(0, 0, img.width, img.height);
-            var i, j, row;
+            var i, j, x, y, vertexRow, colorRow;
 
-            data = [];
-            for (j = 0; j < img.height; j++){
-                row = [];
-                for (i = 0; i < img.width; i ++){
-                    row.push(Entropy.watch({
+            vertexData = [];
+            colorData = [];
+            for (j = 0, y = 0; j < img.height; j++, y += PIXEL_SIZE){
+                vertexRow = [];
+                colorRow = [];
+                for (i = 0, x = 0; i < img.width; i++, x += PIXEL_SIZE){
+                    vertexRow.push(createVertex(x, y));
+
+                    colorRow.push(Entropy.watch({
                         r: imageData.data[(j * img.width * 4) + (i * 4)],
                         g: imageData.data[(j * img.width * 4) + (i * 4) + 1],
-                        b: imageData.data[(j * img.width * 4) + (i * 4) + 2],
-                        a: 1
+                        b: imageData.data[(j * img.width * 4) + (i * 4) + 2]
                     }));
                 }
-                data.push(row);
+
+                // Add an additional data point at the right side.
+                vertexRow.push(createVertex(x, y));
+
+                vertexData.push(vertexRow);
+                colorData.push(colorRow);
             }
 
+            // Add an additional row.
+            vertexRow = [];
+            for (i = 0, x = 0; i < img.width; i++, x += PIXEL_SIZE){
+                vertexRow.push(createVertex(x, y));
+            }
+            vertexRow.push(createVertex(x, y));
+            vertexData.push(vertexRow);
+
+            updateCanvas();
             updateCanvas();
 
             clearInterval(updateTimer);
-            updateTimer = setInterval(updateCanvas, 500);
+            updateTimer = setInterval(updateCanvas, 5000);
         };
 
         img.src = 'assets/demo_image.png';
@@ -203,9 +225,6 @@ if (!SUPPORTS_ENTROPY){
     var HEIGHT = 375;
 
     var DOT_RADIUS = 3;
-    var DOT_DAMPENING = 10;
-    var DOT_INDEX_DAMPENING = 100;
-    var LINE_DAMPENING = 5;
 
     var canvas = document.querySelector('#demo-game');
     var context = canvas.getContext('2d');
@@ -221,10 +240,10 @@ if (!SUPPORTS_ENTROPY){
     var initializeData = function(){
         dots = JSON.parse(dotData).map(function(dot, index){
             return Entropy.watch({
-                x: dot.x * DOT_DAMPENING,
-                y: dot.y * DOT_DAMPENING,
-                index: index * DOT_INDEX_DAMPENING
-            });
+                x: dot.x,
+                y: dot.y,
+                index: index
+            }, 0.2);
         });
     };
 
@@ -233,10 +252,10 @@ if (!SUPPORTS_ENTROPY){
         context.lineWidth = 1;
 
         context.beginPath();
-        context.moveTo(points[0].x / LINE_DAMPENING, points[0].y / LINE_DAMPENING);
+        context.moveTo(points[0].x, points[0].y);
         points.forEach(function(point, index){
             if (!index) return;
-            context.lineTo(point.x / LINE_DAMPENING, point.y / LINE_DAMPENING);
+            context.lineTo(point.x, point.y);
         });
         context.stroke();
         context.fillStyle = 'rgba(255,0,0,0.05)';
@@ -251,15 +270,13 @@ if (!SUPPORTS_ENTROPY){
 
         dots.forEach(function(dot){
             context.beginPath();
-            context.moveTo(dot.x / DOT_DAMPENING, dot.y / DOT_DAMPENING);
-            context.arc(dot.x / DOT_DAMPENING, dot.y / DOT_DAMPENING,
-                DOT_RADIUS, 0, Math.PI * 2);
+            context.moveTo(dot.x, dot.y);
+            context.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
             context.fill();
 
-            var index = Math.round(((dot.index / DOT_INDEX_DAMPENING) * 100)) / 100;
+            var index = Math.round(((dot.index) * 100)) / 100;
 
-            context.fillText(index, (dot.x / DOT_DAMPENING),
-                (dot.y / DOT_DAMPENING) - 10);
+            context.fillText(index, dot.x, dot.y - 10);
         }, this);
     };
 
@@ -270,7 +287,7 @@ if (!SUPPORTS_ENTROPY){
     };
 
     var startDecay = function(){
-        if (!decayTimer) decayTimer = setInterval(draw, 200);
+        if (!decayTimer) decayTimer = setInterval(draw, 50);
     };
 
     var mouseMove = function(e){
@@ -286,20 +303,21 @@ if (!SUPPORTS_ENTROPY){
         if (points.length > MAX_POINTS) points.shift();
 
         points.push(Entropy.watch({
-            x: x * LINE_DAMPENING,
-            y: y * LINE_DAMPENING
-        }));
+            x: x,
+            y: y
+        }, 0.5));
 
         draw();
     };
 
     var mouseDown = function(e){
-        startDecay();
+        decayTimer = clearInterval(decayTimer);
         document.addEventListener('mouseup', mouseUp);
         document.addEventListener('mousemove', mouseMove);
     };
 
     var mouseUp = function(e){
+        startDecay();
         document.removeEventListener('mouseup', mouseUp);
         document.removeEventListener('mousemove', mouseMove);
     };
