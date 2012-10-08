@@ -60,51 +60,53 @@ if (!SUPPORTS_ENTROPY){
         getCount_: function(){
             return this.count.toFixed(Math.max(Math.min(this.precision, 20), 0));
         }
-    }, 0.9);
+    }, 0.3);
 
+    // Generate all of the verses and store them in an array so we can hook up the results to a
+    // slider control.
     var verses = [];
     var verse;
     while ((verse = NinetyNineBottles.step())){
         verses.push(verse);
     }
 
-    var ouptput = document.querySelector('#verse');
+    var output = document.querySelector('#verse');
     var slider = document.querySelector('#slider');
     var thumb = document.querySelector('#thumb');
     var label = document.querySelector('#label');
 
     var updateText = function(index){
-        ouptput.innerHTML = '';
-        ouptput.appendChild(document.createTextNode(verses[index]));
+        output.innerHTML = '';
+        output.appendChild(document.createTextNode(verses[index]));
         label.innerHTML = 'Verse ' + (index + 1);
     };
 
-    var updateSider = function(e){
+    var mouseMove = function(e){
         e.preventDefault();
         var sliderRect = slider.getBoundingClientRect();
         var clickOffsetX = e.pageX - sliderRect.left;
-        var percentage = (clickOffsetX / sliderRect.width) * 100;
+        var percentage = Math.max(0, Math.min(1, clickOffsetX / sliderRect.width));
 
         // Clamp between 0 and 100.
-        percentage = Math.max(0, Math.min(100, percentage));
-        thumb.style.left = percentage + '%';
+        thumb.style.left = (percentage * 100) + '%';
 
-        var index = Math.floor((verses.length - 1) * (percentage / 100));
+        var index = Math.floor((verses.length - 1) * percentage);
         updateText(index);
     };
 
     var mouseUp = function(e){
-        updateSider(e);
+        mouseMove(e);
         document.removeEventListener('mouseup', mouseUp);
-        document.removeEventListener('mousemove', updateSider);
+        document.removeEventListener('mousemove', mouseMove);
     };
 
     thumb.addEventListener('mousedown', function(e){
-        updateSider(e);
+        mouseMove(e);
         document.addEventListener('mouseup', mouseUp);
-        document.addEventListener('mousemove', updateSider);
+        document.addEventListener('mousemove', mouseMove);
     });
 
+    // Update the text to the first verse.
     updateText(0);
 })();
 
@@ -132,7 +134,7 @@ if (!SUPPORTS_ENTROPY){
         return 'rgba(' + rgb + ', 1)';
     };
 
-    var updateCanvas = function(e){
+    var drawImage = function(e){
         var i, j;
 
         for(j = 0; j < colorData.length; j++){
@@ -148,7 +150,7 @@ if (!SUPPORTS_ENTROPY){
         }
     };
 
-    var loadImageData = function(){
+    var setupImage = function(){
         var img = new Image();
 
         img.onload = function(){
@@ -156,7 +158,7 @@ if (!SUPPORTS_ENTROPY){
                 return Entropy.watch({
                     x: x,
                     y: y
-                }, 0.5);
+                }, 0.75);
             };
 
             canvas.setAttribute('width', img.width * PIXEL_SIZE);
@@ -198,22 +200,21 @@ if (!SUPPORTS_ENTROPY){
             vertexRow.push(createVertex(x, y));
             vertexData.push(vertexRow);
 
-            updateCanvas();
-            updateCanvas();
+            drawImage();
 
             clearInterval(updateTimer);
-            updateTimer = setInterval(updateCanvas, 5000);
+            updateTimer = setInterval(drawImage, 5000);
         };
 
         img.src = 'assets/demo_image.png';
     };
 
-    loadImageData();
+    setupImage();
 
-    canvas.addEventListener('mousemove', updateCanvas);
+    canvas.addEventListener('mousemove', drawImage);
 
     var resetButton = document.querySelector('#demo-image + span');
-    resetButton.addEventListener('click', loadImageData);
+    resetButton.addEventListener('click', setupImage);
 })();
 
 // Connect the dots.
@@ -223,7 +224,6 @@ if (!SUPPORTS_ENTROPY){
     var MAX_POINTS = 1500;
     var WIDTH = 750;
     var HEIGHT = 375;
-
     var DOT_RADIUS = 3;
 
     var canvas = document.querySelector('#demo-game');
@@ -232,13 +232,13 @@ if (!SUPPORTS_ENTROPY){
     canvas.setAttribute('width', WIDTH);
     canvas.setAttribute('height', HEIGHT);
 
-    var dotData = '[{"x":260,"y":287},{"x":268,"y":260},{"x":187,"y":196},{"x":206,"y":188},{"x":191,"y":136},{"x":237,"y":143},{"x":252,"y":120},{"x":303,"y":164},{"x":284,"y":66},{"x":319,"y":83},{"x":350,"y":27},{"x":381,"y":81},{"x":416,"y":67},{"x":398,"y":163},{"x":451,"y":117},{"x":461,"y":141},{"x":511,"y":135},{"x":495,"y":186},{"x":515,"y":194},{"x":433,"y":258},{"x":439,"y":288},{"x":356,"y":278},{"x":358,"y":355},{"x":344,"y":355},{"x":344,"y":277},{"x":261,"y":288}]';
+    var originalDotData = '[{"x":260,"y":287},{"x":268,"y":260},{"x":187,"y":196},{"x":206,"y":188},{"x":191,"y":136},{"x":237,"y":143},{"x":252,"y":120},{"x":303,"y":164},{"x":284,"y":66},{"x":319,"y":83},{"x":350,"y":27},{"x":381,"y":81},{"x":416,"y":67},{"x":398,"y":163},{"x":451,"y":117},{"x":461,"y":141},{"x":511,"y":135},{"x":495,"y":186},{"x":515,"y":194},{"x":433,"y":258},{"x":439,"y":288},{"x":356,"y":278},{"x":358,"y":355},{"x":344,"y":355},{"x":344,"y":277},{"x":261,"y":288}]';
     var dots = [];
     var points = [];
     var decayTimer;
 
     var initializeData = function(){
-        dots = JSON.parse(dotData).map(function(dot, index){
+        dots = JSON.parse(originalDotData).map(function(dot, index){
             return Entropy.watch({
                 x: dot.x,
                 y: dot.y,
@@ -254,11 +254,10 @@ if (!SUPPORTS_ENTROPY){
         context.beginPath();
         context.moveTo(points[0].x, points[0].y);
         points.forEach(function(point, index){
-            if (!index) return;
-            context.lineTo(point.x, point.y);
+            if (index) context.lineTo(point.x, point.y);
         });
         context.stroke();
-        context.fillStyle = 'rgba(255,0,0,0.05)';
+        context.fillStyle = 'rgba(255, 0, 0, 0.05)';
         context.fill();
     };
 

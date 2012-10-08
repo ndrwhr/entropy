@@ -1,7 +1,7 @@
 /**
- * Entropy is an esoteric programming language created by rottytooth. This is of course by no means
- * an complete implementation as JavaScript does not make it easy to overwrite strings and numbers
- * on the fly.
+ * Entropy is an esoteric programming language created by Daniel Temkin. This is of course by no
+ * means a complete implementation, as JavaScript does not make it easy to overwrite strings and
+ * numbers on the fly. For example usage please consult the README.
  *
  * The original (complete) .net implementation can be found here:
  *
