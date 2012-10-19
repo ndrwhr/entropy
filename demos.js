@@ -12,7 +12,7 @@ if (!SUPPORTS_ENTROPY){
     var header = document.querySelector('h1');
     var data = Entropy.watch({
         text: header.innerHTML
-    }, 2);
+    }, 0.75);
 
     var updateHeader = function(){
         header.innerHTML = '';
@@ -158,7 +158,7 @@ if (!SUPPORTS_ENTROPY){
                 return Entropy.watch({
                     x: x,
                     y: y
-                }, 0.75);
+                }, 0.5);
             };
 
             canvas.setAttribute('width', img.width * PIXEL_SIZE);
@@ -201,9 +201,8 @@ if (!SUPPORTS_ENTROPY){
             vertexData.push(vertexRow);
 
             drawImage();
-
-            clearInterval(updateTimer);
-            updateTimer = setInterval(drawImage, 5000);
+            drawImage();
+            drawImage();
         };
 
         img.src = 'assets/demo_image.png';
@@ -307,6 +306,8 @@ if (!SUPPORTS_ENTROPY){
         }, 0.5));
 
         draw();
+
+        startDecay();
     };
 
     var mouseDown = function(e){
